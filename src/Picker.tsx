@@ -9,6 +9,9 @@ type IPickerProp = {
   computeChildIndex: Function;
 };
 
+// 用于优化PC端行为
+const lazyBind = ['mouseup', 'mousemove', 'mouseleave', 'dragstart'];
+
 class Picker extends React.Component<IPickerProp & IPickerProps, any> {
   static defaultProps = {
     prefixCls: 'rmc-picker',
@@ -27,6 +30,7 @@ class Picker extends React.Component<IPickerProp & IPickerProps, any> {
     let startY = 0;
     let scrollDisabled = false;
     let isMoving = false;
+    let body = document.body;
 
     const setTransform = (nodeStyle: CSSStyleDeclaration, value: any) => {
       nodeStyle.transform = value;
@@ -128,9 +132,24 @@ class Picker extends React.Component<IPickerProp & IPickerProps, any> {
       setTransform(this.contentRef.style, `translate3d(0,${-scrollY}px,0)`);
     };
 
-    return {
+    const removeLazyBindEvents = () => {
+      lazyBind.forEach(key => {
+        body.removeEventListener(key, handles[key]);
+      });
+    };
+
+    const addLazyBindEvents = () => {
+      lazyBind.forEach(key => {
+        body.addEventListener(key, handles[key], false);
+      });
+    };
+
+    const handles = {
       touchstart: (evt: React.TouchEvent<HTMLDivElement>) => onStart(evt.touches[0].screenY),
-      mousedown: (evt: React.MouseEvent<HTMLDivElement>) => onStart(evt.screenY),
+      mousedown: (evt: React.MouseEvent<HTMLDivElement>) => {
+        onStart(evt.screenY);
+        addLazyBindEvents();
+      },
       touchmove: (evt: React.TouchEvent<HTMLDivElement>) => {
         evt.preventDefault();
         onMove(evt.touches[0].screenY);
@@ -141,7 +160,17 @@ class Picker extends React.Component<IPickerProp & IPickerProps, any> {
       },
       touchend: () => onFinish(),
       touchcancel: () => onFinish(),
-      mouseup: () => onFinish(),
+      mouseup: () => {
+        onFinish();
+        removeLazyBindEvents();
+      },
+      mouseleave: () => {
+        onFinish();
+        removeLazyBindEvents();
+      },
+      dragstart: (evt: React.DragEvent<HTMLDivElement>) => {
+        evt.preventDefault();
+      },
       getValue: () => {
         return scrollY;
       },
@@ -150,6 +179,7 @@ class Picker extends React.Component<IPickerProp & IPickerProps, any> {
         scrollDisabled = disabled;
       },
     };
+    return handles;
   })();
 
   constructor(props) {
@@ -191,7 +221,7 @@ class Picker extends React.Component<IPickerProp & IPickerProps, any> {
     const willPreventDefault = passiveSupported ? { passive: false } : false;
     const willNotPreventDefault = passiveSupported ? { passive: true } : false;
     Object.keys(this.scrollHanders).forEach(key => {
-      if (key.indexOf('touch') === 0 || key.indexOf('mouse') === 0) {
+      if ((key.indexOf('touch') === 0 || key.indexOf('mouse') === 0) && lazyBind.indexOf(key) === -1) {
         const pd = key.indexOf('move') >= 0 ? willPreventDefault : willNotPreventDefault;
         (rootRef as HTMLDivElement).addEventListener(key, this.scrollHanders[key], pd as any);
       }
@@ -200,7 +230,7 @@ class Picker extends React.Component<IPickerProp & IPickerProps, any> {
 
   componentWillUnmount() {
     Object.keys(this.scrollHanders).forEach(key => {
-      if (key.indexOf('touch') === 0 || key.indexOf('mouse') === 0) {
+      if ((key.indexOf('touch') === 0 || key.indexOf('mouse') === 0) && lazyBind.indexOf(key) === -1) {
         (this.rootRef as HTMLDivElement).removeEventListener(key, this.scrollHanders[key]);
       }
     });
