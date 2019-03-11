@@ -1,6 +1,6 @@
 {
-  "name": "rmc-picker",
-  "version": "5.0.5",
+  "name": "@gdjiami/rmc-picker",
+  "version": "5.0.6",
   "description": "React Mobile Picker Component(web and react-native)",
   "keywords": [
     "react",
@@ -38,9 +38,6 @@
     "build": "rc-tools run build",
     "gh-pages": "rc-tools run gh-pages",
     "start": "rc-tools run server",
-    "prepublish": "rc-tools run guard",
-    "prepare": "rc-tools run guard",
-    "prepublishOnly": "rc-tools run guard",
     "pub": "rc-tools run pub --babel-runtime",
     "lint": "rc-tools run lint --no-js-lint",
     "karma": "rc-test run karma",

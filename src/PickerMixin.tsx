@@ -5,6 +5,7 @@ import { IPickerProps } from './PickerTypes';
 type IItemProps = {
   className?: string;
   value: any;
+  children: React.ReactNode
 };
 
 const Item = (_props: IItemProps) => null;
